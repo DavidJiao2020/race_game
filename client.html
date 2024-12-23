@@ -1,0 +1,209 @@
+<html>
+
+<head>
+</head>
+
+<body>
+
+  <div id="login_page_div_id">
+    <div>
+      Player name:
+    </div>
+    <input id="player_name_input_id">
+    </input>
+    <button id="login_button_id">login</button>
+    <br><br>
+    <div id="login_error_div_id">
+    </div>
+  </div>
+
+  <div id="lobby_page_div_id" hidden>
+    <div>
+      Rooms:
+    </div>
+    <div id="rooms_div_id">
+
+    </div>
+    <button id="create_room_button_id">
+      Create Room
+    </button>
+
+
+    <div id="name_div_id">
+      Hello:
+    </div>
+    <div>
+      Online Players:
+    </div>
+    <div id="players_div_id">
+
+    </div>
+
+  </div>
+
+  <div id="room_page_div_id" hidden>
+    <div>
+      Room #:
+    </div>
+    <div id="room_number_div_id">
+
+    </div>
+    <div>
+      Room Capacity:
+    </div>
+    <div id="room_capacity_div_id">
+      8
+    </div>
+    <div>
+      # of Players:
+    </div>
+    <div id="room_player_count_div_id">
+      0
+    </div>
+    <div>
+      Player List:
+    </div>
+    <div id="room_player_list_div_id">
+
+    </div>
+    <button id="room_start_game">
+      Start Game
+    </button>
+  </div>
+
+
+
+
+  <script>
+    ///////////////////////  GLOBAL  /////////////////////
+
+    var g_player_name = null;
+    var g_update_rate = 3000
+    var g_current_location = 'login' //'login', 'lobby', or 'room'
+    var g_room_id = null
+
+    ///////////////////  API FUNCTION  ///////////////////
+    function api_base(api_name, api_data, player_name, on_return) {
+      console.log('api_name: ' + api_name)
+      console.log('api_data: ' + JSON.stringify(api_data))
+      url = '/api'
+      let sender = new XMLHttpRequest();
+      sender.open("POST", url);
+      // Set the request header i.e. which type of content you are sending
+      sender.setRequestHeader("Content-Type", "application/json")
+      // Create a state change callback
+      sender.onreadystatechange = function () {
+        if (sender.readyState === 4 && sender.status === 200) {
+          // Print received data from server
+          res = JSON.parse(this.responseText)
+          on_return(res)
+        }
+      }
+      // Converting JSON data to string
+      var data = JSON.stringify({ 'api_name': api_name, 'api_data': api_data, 'player_name': player_name });
+      // Sending data with the
+      sender.send(data)
+    }
+
+    //////////////////////  ROOM  //////////////////////////
+
+    function room_update() {
+      api_data = { 'room_id': g_room_id, 'player_name': g_player_name }
+      api_base('room_update', api_data, g_player_name, function (res) {
+        //res[players]
+        g_room_id = res['msg']['room_id']
+        document.getElementById('room_number_div_id').innerHTML = res['msg']['room_id']
+        document.getElementById('room_player_count_div_id').innerHTML = res['msg']['player_names'].length
+        document.getElementById('room_player_list_div_id').innerHTML = res['msg']['player_names']
+      })
+    }
+
+    function room() {
+      room_update()
+      g_current_location = 'room'
+      document.getElementById('login_page_div_id').style.display = "none"
+      document.getElementById('lobby_page_div_id').style.display = "none"
+      document.getElementById('room_page_div_id').style.display = "block"
+    }
+
+    ///////////////////////  LOBBY  ///////////////////////
+
+    function lobby_update() {
+      api_base('lobby_update', g_player_name, g_player_name, function (res) {
+        console.log(res)
+        document.getElementById("players_div_id").innerHTML = Object.keys(res['msg'])
+      })
+    }
+
+    function lobby() {
+
+      document.getElementById('name_div_id').innerHTML = `Hello: ${g_player_name}`
+      lobby_update()
+
+      g_current_location = 'lobby'
+      document.getElementById('login_page_div_id').style.display = "none"
+      document.getElementById('lobby_page_div_id').style.display = "block"
+      document.getElementById('room_page_div_id').style.display = "none"
+    }
+
+
+
+
+    ///////////////////////  LOGIN  //////////////////////////
+
+
+    function send_player_name(player_name) {
+      api_base('login', player_name, g_player_name, function (res) {
+        if (res['status'] === 'success') {
+          g_player_name = player_name
+
+          lobby()
+        } else {
+          document.getElementById('login_error_div_id').innerHTML = res['msg']
+        }
+      })
+    }
+
+    function login(player_name) {
+      send_player_name(player_name)
+    }
+
+    ///////////////  LIVE UPDATE  /////////////////
+
+
+    function update() {
+      if (g_current_location === 'lobby') {
+        lobby_update()
+        console.log('lobby updated')
+      }
+      if (g_current_location === 'room') {
+        room_update()
+        console.log('room updated')
+      }
+
+    }
+
+
+    ///////////////  MAIN  //////////////
+    function main() {
+      login_button = document.getElementById('login_button_id');
+      login_button.onclick = function () {
+        player_name = document.getElementById('player_name_input_id').value;
+        login(player_name);
+      }
+
+      create_room_button = document.getElementById('create_room_button_id');
+      create_room_button.onclick = function () {
+        room();
+      }
+
+      setInterval(update, g_update_rate);
+    }
+
+    main();
+
+  </script>
+
+  <body>
+
+</html>

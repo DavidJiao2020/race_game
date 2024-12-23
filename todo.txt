@@ -1,0 +1,4 @@
+DONE: kick players when last updated time more than 5 secs ago
+DONE: create room
+TODO: display room list
+DONE: join room
