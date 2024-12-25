@@ -1,81 +1,297 @@
 
 /////////////////  GLOBAL  /////////////////
 
-var g_top = { "players": {}, "rooms": {} };
-var g_update_rate = 3000
-var g_online_update_interval = 5000
-var g_last_updated_room = 0
+const { stringify } = require('querystring');
+
+var g_top = {
+  "players": {},
+  "rooms": {},
+  "update_rate": 3000,
+  'online_update_interval': 5000,
+  'last_updated_room': 0,
+  'player_name_max_length': 64,
+};
+function g_is_valid_player_name(player_name) {
+  if (player_name === undefined) {
+    console.log('warning: player name is undefined.')
+    return false
+  }
+  if (player_name === null) {
+    console.log('warning: player name is null.')
+    return false
+  }
+  if (!(/^[A-Za-z0-9_]+$/.test(player_name))) {
+    console.log('warning: player name is not alphanumeric a/o _.')
+    return false
+  }
+  if (player_name.length > g_top['player_name_max_length']) {
+    console.log('warning: player name is greater than ' + g_top['player_name_max_length'] + ' characters.')
+    return false
+  }
+  return true
+}
+function g_is_valid_room_id(room_id) {
+  if (room_id === undefined) {
+    console.log('warning: room id is undefined.')
+    return false
+  }
+  if (room_id === null) {
+    console.log('warning: room id is null.')
+    return false
+  }
+  if (!(/^[0-9]+$/.test(String(room_id)))) {
+    console.log('warning: room id is not a number')
+    return false
+  }
+  return true
+}
+function g_is_player_registered(player_name) {
+  return player_name in g_top['players']
+}
+function g_is_room_exists(room_id) {
+  return room_id in g_top['rooms']
+}
+
+function g_is_player_in_room(player_name, room_id) {
+  if (g_is_valid_player_name(player_name) && g_is_player_registered(player_name) && g_is_valid_room_id(room_id) && g_is_room_exists(room_id)) {
+    return player_name in g_top['rooms'][room_id]['player_names']
+  } else {
+    return false
+  }
+}
+
+function g_get_player_room_id(player_name) {
+  let room_id = null
+  if (g_is_valid_player_name(player_name) && g_is_player_registered(player_name)) {
+    room_id = g_top['players'][player_name]['room_id']
+  }
+  return room_id
+}
+
+function g_update_player_update_time(player_name) {
+  if (g_is_player_registered(player_name)) {
+    g_top['players'][player_name]['last_updated_time'] = Date.now()
+  } else {
+    // do nothing
+  }
+  // no return
+}
+
+function g_add_player(player_name) {
+  if (!g_is_valid_player_name(player_name)) {
+    console.log('add player IS THE ISSUE.')
+    console.log('warning: player_name is invalid. ignored.')
+    return { 'status': 'fail', 'msg': 'user_is_invalid' }
+  }
+  if (g_is_player_registered(player_name)) {
+    console.log('warning: player_name exists: ' + player_name + '. ignored.')
+    return { 'status': 'fail', 'msg': 'user_exists' }
+  }
+  g_top["players"][player_name] = { 'room_id': null, 'last_updated_time': Date.now() };
+  return { 'status': 'success', 'msg': 'user_added' }
+}
+
+function g_create_room(player_name) {
+  if (!g_is_valid_player_name(player_name)) {
+    console.log('create room IS THE ISSUE.')
+    console.log('warning: player_name is invalid. ignored.')
+    return { 'status': 'fail', 'msg': 'user_is_invalid' }
+  }
+  if (!g_is_player_registered(player_name)) {
+    return { 'status': 'fail', 'msg': 'user_does_not_exist' }
+  }
+  if (g_is_valid_room_id(g_top['players'][player_name]['room_id'])) {
+    return { 'status': 'fail', 'msg': 'user_has_room ' + g_top['players'][player_name]['room_id'] }
+  }
+  g_top['last_updated_room']++
+  let room_id = g_top['last_updated_room']
+  g_top['rooms'][room_id] = { 'player_names': {}, 'host': player_name, 'is_started': 'no' }
+  g_top['rooms'][room_id]['player_names'][player_name] = {}
+  g_top['players'][player_name]['room_id'] = room_id
+
+  return { 'status': 'success', 'msg': 'room created' }
+}
+
+function g_join_room(player_name, room_id) {
+  if (!g_is_valid_player_name(player_name)) {
+    console.log('warning: player_name is invalid. ignored.')
+    return { 'status': 'fail', 'msg': 'user_is_invalid' }
+  }
+  if (!g_is_player_registered(player_name)) {
+    return { 'status': 'fail', 'msg': 'user_does_not_exist' }
+  }
+  if (!g_is_valid_room_id(room_id)) {
+    return { 'status': 'fail', 'msg': 'room_id_is_invalid' }
+  }
+  if (!g_is_room_exists(room_id)) {
+    return { 'status': 'fail', 'msg': 'room_does_not_exist' }
+  }
+  g_top['rooms'][room_id]['player_names'][player_name] = {}
+  g_top['players'][player_name]['room_id'] = room_id
+  return { 'status': 'success', 'msg': 'room_joined' }
+}
+
+function g_remove_player(player_name) {
+  if (!g_is_valid_player_name(player_name)) {
+    console.log('warning: player_name is invalid. ignored.')
+    return { 'status': 'fail', 'msg': 'user_is_invalid' }
+  }
+  if (!g_is_player_registered(player_name)) {
+    return { 'status': 'fail', 'msg': 'user_does_not_exist' }
+  }
+  let room_id = g_top['players'][player_name]['room_id']
+  if (g_is_valid_room_id(room_id)) {
+    if (!g_is_room_exists(room_id)) {
+      console.log('error: user is in nonexisting room ' + room_id)
+    } else {
+      if (g_top['rooms'][room_id]['host'] === player_name) {
+        for (let player in g_top['rooms'][room_id]['player_names']) {
+          debug('remove host')
+          console.log()
+          g_top['players'][player]['room_id'] = null
+        }
+        delete g_top['rooms'][room_id]
+      } else {
+        delete g_top['rooms'][room_id]['player_names'][player_name]
+      }
+    }
+  }
+  delete g_top['players'][player]
+  return { 'status': 'success', 'msg': 'user_removed' }
+}
+
+function g_remove_room() {
+
+}
+
+////////////////  DEBUG  ///////////////////
+
+function debug(tag) {
+  console.log(tag + ': ' + JSON.stringify(g_top, null, 2))
+}
 
 ////////////////  ROOM  /////////////////
 
-function create_room(player_name) {
-  g_last_updated_room++
-  room_id = g_last_updated_room
-  g_top['rooms'][room_id] = { 'player_names': [player_name], 'host': player_name }
-  g_top['players'][player_name]['room_id'] = room_id
-
-
-}
-
-function join_room(player_name, room_id) {
-  console.log('player_name: '+player_name)////////
-  console.log('room-id: '+room_id)////////
-  g_top['rooms'][room_id]['player_names'].push(player_name)
-  g_top['players'][player_name]['room_id'] = room_id
-}
-
-function room_update(data) {
-  room_id = data['room_id']
-  player_name = data['player_name']
-  console.log('data: '+JSON.stringify(data))
-  if (room_id === null) {
-    create_room(player_name)
-  } else {
-    if (g_top['players'][player_name]['room_id']===room_id){
-      //do nothing
-    }else{
-      join_room(player_name, room_id)
-    }
-    
+function create_room(data) {
+  let player_name = data['player_name']
+  console.log('data: ' + JSON.stringify(data))
+  let ret = g_create_room(player_name)
+  if (ret['status']==='fail'){
+    return ret
   }
-  room_id = g_top['players'][player_name]['room_id']
-  player_names = g_top['rooms'][room_id]['player_names']
-
-  ret = { 'status': 'success', 'msg': { 'room_id': room_id, 'player_names': player_names } }
+  let msg = { 'player_names': {}, 'room_id': g_get_player_room_id(player_name) }
+  msg['player_names'][player_name] = {}
+  console.log('msg: ' + msg)
+  ret['msg']=msg
   return ret
 }
 
+function join_room(data) {
+  let room_id = data['room_id']
+  let player_name = data['player_name']
+  console.log('data: ' + JSON.stringify(data))
+  console.log('room_id: ' + room_id)
+  let ret = g_join_room(player_name, room_id)
+  if (ret['status']==='fail'){
+    return ret
+  }
+  let msg = { 'player_names': g_top['rooms'][room_id]['player_names'], 'room_id': g_get_player_room_id(player_name) }
+  console.log('msg: ' + msg)
+  ret['msg']=msg
+  return ret
+}
+
+function update_room_player_list(data) {
+  let room_id = data['room_id']
+  let player_name = data['player_name']
+  console.log('data: ' + JSON.stringify(data))
+  console.log('room_id: ' + room_id)
+  if (!g_is_valid_player_name(player_name)) {
+    console.log(`warning: player name ${player_name} is invalid when updating room. ignored.`)
+    return { 'status': 'fail', 'msg': `player name ${player_name} is invalid when updating room.` }
+  }
+  if (!g_is_player_registered(player_name)) {
+    console.log(`warning: player name ${player_name} is not registered when updating room. ignored.`)
+    return { 'status': 'fail', 'msg': `player name ${player_name} is not registered when updating room.` }
+  }
+  if (!g_is_valid_room_id(room_id)) {
+    console.log(`warning: room id ${room_id} is invalid when updating room. ignored.`)
+    return { 'status': 'fail', 'msg': `room id ${room_id} is invalid when updating room.` }
+  }
+  let ret = { 'status': 'success', 'msg': g_top['rooms'][room_id] }
+  return ret
+}
+/*
+function update_room(data) {
+  let room_id = data['room_id']
+  let player_name = data['player_name']
+  console.log('data: ' + JSON.stringify(data))
+  console.log('room_id: ' + room_id)
+  debug('room update')//////////
+  if (!g_is_valid_player_name(player_name)) {
+    console.log(`warning: player name ${player_name} is invalid when updating room. ignored.`)
+    return
+  }
+  if (!g_is_player_registered(player_name)){
+    console.log(`warning: player name ${player_name} is not registered when updating room. ignored.`)
+    return
+  }
+  if (room_id === null) {
+    g_create_room(player_name)
+  } else {
+    console.log('player name: '+player_name)
+    if (g_top['players'][player_name]['room_id'] === room_id) {
+      //do nothing
+    } else {
+      g_join_room(player_name, room_id)
+    }
+  }
+  room_id = g_top['players'][player_name]['room_id']
+  let player_names = g_top['rooms'][room_id]['player_names']
+
+  let ret = { 'status': 'success', 'msg': { 'room_id': room_id, 'player_names': player_names } }
+  console.log(`RESPONSETEXT (server end): -->${JSON.stringify(ret)}<--`)
+  return ret
+}
+*/
 
 
 ////////////////  LOBBY  /////////////////
 
-function lobby_update(data) {
-  ret = { 'status': 'success', 'msg': g_top["players"] }
+function update_lobby(data) {
+  let player_name = data['player_name']
+  if (!g_is_valid_player_name(player_name)) {
+    console.log(`warning: player name ${player_name} is invalid when updating lobby. ignored.`)
+    return
+  }
+  if (!g_is_player_registered(player_name)) {
+    console.log(`warning: player name ${player_name} is not registered when updating lobby. ignored.`)
+    return
+  }
+  let ret = { 'status': 'success', 'msg': g_top }
   return ret
 }
 
 ////////////////////  LOGIN  //////////////////
-function add_player(player_name) {
-  if (player_name in g_top["players"]) {
-    return { 'status': 'fail', 'msg': 'user_exists' }
-  } else {
-    g_top["players"][player_name] = { 'room_id': null, 'last_updated_time': Date.now() };
-    return { 'status': 'success', 'msg': 'user_added' }
-  }
-}
 
 function login(data) {
-  ret = add_player(data)
+  let player_name = data['player_name']
+  let ret = g_add_player(player_name)
   return ret
 }
 
 /////////////////  LIVE UPDATE  /////////////////
 
 function update() {
+
+  debug('update')
+
+
   //make sure player is online
   for (player in g_top['players']) {
-    if (Date.now() - g_top['players'][player]['last_updated_time'] > g_online_update_interval) {
-      delete g_top['players'][player]
+    if (Date.now() - g_top['players'][player]['last_updated_time'] > g_top['online_update_interval']) {
+      g_remove_player(player)
+      //delete g_top['players'][player]
     }
   }
   console.log('updated')
@@ -83,25 +299,28 @@ function update() {
 
 /////////////////  API FUNCTION  /////////////////
 
-function api_func(req, res) {
-  player_name = req.body['player_name']
+function recieve_api_data(req, res) {
+  let api_name = req.body['api_name']
+  let api_data = req.body['api_data']
+  let player_name = api_data['player_name']
 
-  console.log('api_name: ' + req.body['api_name'])////
-  console.log('api_data: ' + JSON.stringify(req.body['api_data']))////
+  console.log('api_name: ' + api_name)////
+  console.log('api_data: ' + JSON.stringify(api_data))////
 
-  if (player_name in g_top['players']) {
-    g_top['players'][player_name]['last_updated_time'] = Date.now()
-  } else {
-    //do nothing
+  g_update_player_update_time(player_name)
+  let ret = null
+  if (api_name === 'login') {
+    ret = login(api_data)
+  } else if (api_name === 'update_lobby') {
+    ret = update_lobby(api_data)
+  } else if (api_name === 'update_room_player_list') {
+    ret = update_room_player_list(api_data)
+  } else if (api_name === 'create_room') {
+    ret = create_room(api_data)
+  } else if (api_name === 'join_room') {
+    ret = join_room(api_data)
   }
-
-  if (req.body['api_name'] === 'login') {
-    ret = login(req.body['api_data'])
-  } else if (req.body['api_name'] === 'lobby_update') {
-    ret = lobby_update(req.body['api_data'])
-  } else if (req.body['api_name'] === 'room_update') {
-    ret = room_update(req.body['api_data'])
-  }
+  console.log(`RESPONSETEXT (server end): -->${JSON.stringify(ret)}<--`)
 
   res.send(JSON.stringify(ret))
 }
@@ -122,9 +341,9 @@ function main() {
   client.use(cors({ origin: '*' }))
   client.use(body_parser.json())
   client.use(body_parser.urlencoded())
-  client.post('/api', api_func)
+  client.post('/api', recieve_api_data)
   client.get('/', home_func)
-  setInterval(update, g_update_rate);
+  setInterval(update, g_top['update_rate']);
   const port = 3000
   client.listen(port, () => {
     console.log('Game server started at port: ' + port)
