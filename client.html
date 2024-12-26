@@ -67,13 +67,19 @@
     <div id="room_player_list_div_id">
 
     </div>
+    <div>
+      Host:
+    </div>
+    <div id="room_host_div_id">
+
+    </div>
     <button id="room_start_game">
       Start Game
     </button>
+    <button id="leave_room_button_id">
+      Leave Room
+    </button>
   </div>
-
-
-
 
   <script>
     ///////////////////////  GLOBAL  /////////////////////
@@ -87,7 +93,11 @@
     var br = document.createElement('br')
 
     function g_show_message(msg) {
-      Document.getElementById('msg_div_id').innerHTML = JSON.stringify(msg)
+      document.getElementById('msg_div_id').innerHTML = msg
+    }
+
+    function g_hide_message() {
+      document.getElementById('msg_div_id').innerHTML = ''
     }
 
     ///////////////////  API FUNCTION  ///////////////////
@@ -109,31 +119,21 @@
         }
       }
       // Converting JSON data to string
-      let data = JSON.stringify({ 'api_name': api_name, 'api_data': api_data });
+      let req_data = JSON.stringify({ 'api_name': api_name, 'api_data': api_data });
       // Sending data with the
-      sender.send(data)
+      sender.send(req_data)
     }
 
     //////////////////////  ROOM  //////////////////////////
-/*
-    function update_room(player_name, room_id) {
-      let api_data = { 'room_id': room_id, 'player_name': player_name }
-      send_api_data('update_room', api_data, function (res) {
-        //res[players]
-        g_top['room_id'] = res['msg']['room_id']
-        document.getElementById('room_number_div_id').innerHTML = res['msg']['room_id']
-        document.getElementById('room_player_count_div_id').innerHTML = Object.keys(res['msg']['player_names']).length
-        console.log(JSON.stringify(res))
-        document.getElementById('room_player_list_div_id').innerHTML = Object.keys(res['msg']['player_names'])
-      })
-    }*/
 
-    function display_room_player_list(player_names) {
+    function display_room_player_list(player_names, host_name) {
       document.getElementById('room_player_count_div_id').innerHTML = Object.keys(player_names).length
       document.getElementById('room_player_list_div_id').innerHTML = Object.keys(player_names)
+      document.getElementById('room_host_div_id').innerHTML = host_name
     }
 
     function display_room() {
+      g_hide_message()
       g_top['player_location'] = 'room'
       document.getElementById('login_page_div_id').style.display = "none"
       document.getElementById('lobby_page_div_id').style.display = "none"
@@ -146,13 +146,13 @@
       send_api_data('create_room', api_data, function (res) {
         if (res['status'] === 'fail') {
           console.log('warning: create room failure')
-          console.log('message: ' + JSON.stringify(res['msg']))
+          console.log('message: ' + JSON.stringify(res['data']))
           g_show_message(res['msg'])
           return
         }
-        g_top['room_id'] = res['msg']['room_id']
-        document.getElementById('room_number_div_id').innerHTML = res['msg']['room_id']
-        display_room_player_list(res['msg']['player_names'])
+        g_top['room_id'] = res['data']['room_id']
+        document.getElementById('room_number_div_id').innerHTML = res['data']['room_id']
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
         display_room()
       })
     }
@@ -163,14 +163,28 @@
       send_api_data('join_room', api_data, function (res) {
         if (res['status'] === 'fail') {
           console.log('warning: join room failure')
-          console.log('message: ' + JSON.stringify(res['msg']))
+          console.log('message: ' + JSON.stringify(res['data']))
           g_show_message(res['msg'])
           return
         }
-        g_top['room_id'] = res['msg']['room_id']
-        document.getElementById('room_number_div_id').innerHTML = res['msg']['room_id']
-        display_room_player_list(res['msg']['player_names'])
+        g_top['room_id'] = res['data']['room_id']
+        document.getElementById('room_number_div_id').innerHTML = res['data']['room_id']
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
         display_room()
+      })
+    }
+
+    function leave_room(player_name) {
+      let api_data = { 'player_name': player_name }
+      send_api_data('leave_room', api_data, function (res) {
+        if (res['status'] === 'fail') {
+          console.log('warning: leave room failure')
+          console.log('message: ' + JSON.stringify(res['data']))
+          g_show_message(res['msg'])
+          return
+        }
+        g_top['room_id'] = null
+        lobby()
       })
     }
 
@@ -181,14 +195,11 @@
           g_show_message(res['msg'])
           return
         }
-        display_room_player_list(res['msg']['player_names'])
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
       })
     }
 
     ///////////////////////  LOBBY  ///////////////////////
-
-
-
 
     function display_lobby_player_list(res) {
       let players_div = document.getElementById("players_div_id")
@@ -220,20 +231,22 @@
       for (let room_id in data) {
         if (data[room_id]['is_started'] === 'no') {
           rooms_div.innerHTML += `Room ${room_id}: `;
-          let button = document.createElement('button')
+          const button = document.createElement('button')
           button.id = 'room_' + room_id + '_button_id'
           button.textContent = 'Join Room'
           rooms_div.appendChild(button)
-
-          button.onclick = function () {
-            join_room(player_name, room_id)
-          }
-
           rooms_div.appendChild(br)
         } else {
           rooms_div.innerHTML += `Room ${room_id}: Started`;
         }
-
+      }
+      for (let room_id in data) {
+        if (data[room_id]['is_started'] === 'no') {
+          const button = document.getElementById('room_' + room_id + '_button_id')
+          button.onclick = function(){
+            join_room(player_name, room_id)
+          }
+        }
       }
     }
 
@@ -242,7 +255,7 @@
       let api_data = { 'player_name': g_top['player_name'] }
       send_api_data('update_lobby', api_data, function (res) {
         console.log(res)
-        let data = res['msg']
+        let data = res['data']
         display_lobby_player_list(data)
         display_lobby_room_list(data)
       })
@@ -250,7 +263,7 @@
 
 
     function lobby() {
-
+      g_hide_message()
       document.getElementById('name_div_id').innerHTML = `Hello: ${g_top['player_name']}`
       update_lobby()
 
@@ -286,6 +299,7 @@
 
 
     function update() {
+      console.log('update time: ' +Date.now())
       let player_name = g_top['player_name']
       let room_id = g_top['room_id']
       if (g_top['player_location'] === 'lobby') {
@@ -313,6 +327,11 @@
         create_room(g_top['player_name']);
       }
 
+      let leave_room_button = document.getElementById('leave_room_button_id');
+      leave_room_button.onclick = function () {
+        leave_room(g_top['player_name']);
+      }
+      
       setInterval(update, g_top['update_rate']);
     }
 
