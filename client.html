@@ -1,45 +1,193 @@
+<!DOCTYPE html>
+
 <html>
 
 <head>
+  <style>
+    :root {
+      /*--radius-s: .2rem;
+      --radius-m: .3rem;
+      --radius-l: .5rem;
+      --radius-xl: 1rem;
+      --radius-xxl: 2rem;
+      --radius-circular: 50%;
+      */
+      --space-25: .1rem;
+      --space-50: .2rem;
+      --space-75: .4rem;
+      --space-100: .8rem;
+      --space-200: 1.2rem;
+      --space-300: 1.6rem;
+      --space-400: 2.4rem;
+      --space-500: 3.2rem;
+      --space-600: 4rem;
+      --space-700: 8rem;
+      --font_family: Copperplate, fantasy;
+    }
+
+    /*////////////////  LABEL  /////////////////////*/
+
+    .main_label_medium {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    .main_label_large {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    /*////////////////  LOGIN  /////////////////////*/
+
+    .login_container {
+      display: grid;
+      grid-template-columns: auto auto auto;
+      grid-template-rows: auto auto auto auto;
+      /*border: 1px solid black;*/
+      padding: 100px;
+    }
+
+    .login_game_name_div {
+      grid-column: 2/3;
+      grid-row: 1/2;
+      font-size: 2rem;
+      font-family: var(--font_family);
+      font-weight: bold;
+    }
+
+    .login_name_div {
+      grid-column: 2/3;
+      grid-row: 2/3;
+    }
+
+    .login_input_div {
+      grid-column: 2/3;
+      grid-row: 3/4;
+    }
+
+    .login_input {
+      font-size: 0.7rem;
+      height: 1.2rem;
+      /*position: relative;*/
+      width: 100%;
+    }
+
+    .login_button_div {
+      grid-column: 2/3;
+      grid-row: 4/5;
+    }
+
+    .login_button {
+      font-size: 1rem;
+      height: 1.5rem;
+      color: black;
+      width: 100%;
+    }
+
+
+    /*////////////////  LOBBY  /////////////////////*/
+
+    .lobby_container {
+      display: grid;
+      grid-template-columns: auto auto;
+      grid-template-rows: 2.4rem auto;
+      /*border: 1px solid black;*/
+      padding: 1rem;
+    }
+
+    .lobby_name_div {
+      grid-column: 1/3;
+      grid-row: 1/2;
+      font-size: 1rem;
+      padding:0.5rem;
+      background-color: rgb(241, 239, 239);
+      /*border: 1px solid black;*/
+    }
+
+    .lobby_name {
+      font-size: 1.2rem;
+      text-align: center;
+      width: 100%;
+    }
+
+    .lobby_room_div {
+      padding:0.5rem;
+      grid-column: 1/2;
+      grid-row: 2/3;
+      background-color: azure;
+      /*border: 1px solid black;*/
+    }
+
+    .lobby_player_div {
+      padding:0.5rem;
+      grid-column: 2/3;
+      grid-row: 2/3;
+      background-color: beige;
+      /*border: 1px solid black;*/
+    }
+
+    .lobby_room_list_div {
+      display: grid;
+      grid-template-columns: auto auto;
+      padding:0.5rem;
+      /*border: 1px solid black;*/
+    }
+
+  </style>
 </head>
 
 <body>
+
   <div id="msg_div_id">
   </div>
-  <div id="login_page_div_id">
-    <div>
-      Player name:
-    </div>
-    <input id="player_name_input_id">
-    </input>
-    <button id="login_button_id">login</button>
-    <br><br>
 
+  <div class="login_container" id="login_page_div_id">
+    <div class="login_game_name_div">
+      <div>
+        RACE GAME
+      </div>
+    </div>
+    <div class="login_name_div">
+      <div>
+        Enter player name:
+      </div>
+    </div>
+    <div class="login_input_div">
+      <input class="login_input" placeholder="Name here" id="player_name_input_id">
+      </input>
+    </div>
+    <div class="login_button_div">
+      <button class="login_button" id="login_button_id">login</button>
+      <br><br>
+    </div>
   </div>
 
   <div id="lobby_page_div_id" hidden>
-    <div>
-      Rooms:
+    <div class="lobby_container">
+      <div class="lobby_name_div">
+        <div class="lobby_name" id="name_div_id">
+          Hello:
+        </div>
+      </div>
+      <div class="lobby_room_div">
+        <div class="main_label_medium">
+          Rooms:
+        </div>
+        <div class="lobby_room_list_div" id="rooms_div_id">
+        </div>
+        <button id="create_room_button_id">
+          Create Room
+        </button>
+      </div>
+      <div class="lobby_player_div">
+        <div class="main_label_medium">
+          Online Players:
+        </div>
+        <div id="players_div_id">
+  
+        </div>
+      </div>
     </div>
-    <div id="rooms_div_id">
-
-    </div>
-    <button id="create_room_button_id">
-      Create Room
-    </button>
-
-
-    <div id="name_div_id">
-      Hello:
-    </div>
-    <br>
-    <div>
-      Online Players:
-    </div>
-    <div id="players_div_id">
-
-    </div>
-
   </div>
 
   <div id="room_page_div_id" hidden>
@@ -73,15 +221,20 @@
     <div id="room_host_div_id">
 
     </div>
-    <button id="room_start_game">
+    <button id="room_start_game_button_id">
       Start Game
     </button>
+    <div id="room_waiting_div_id">
+      Waiting for host to start game...
+    </div>
     <button id="leave_room_button_id">
       Leave Room
     </button>
   </div>
 
+
   <script>
+
     ///////////////////////  GLOBAL  /////////////////////
 
     var g_top = {
@@ -124,12 +277,43 @@
       sender.send(req_data)
     }
 
+    //////////////////////  GAME  ////////////////////////
+
+    function start_game(player_name, room_id) {
+      let api_data = { 'player_name': player_name }
+      send_api_data('start_game', api_data, function (res) {
+        if (res['status'] === 'fail') {
+          console.log('warning: start game failure')
+          console.log('message: ' + JSON.stringify(res['data']))
+          g_show_message(res['msg'])
+          return
+        }
+        document.getElementById('room_start_game_button_id').disabled = true
+        console.log('game started')
+      })
+    }
+
     //////////////////////  ROOM  //////////////////////////
 
-    function display_room_player_list(player_names, host_name) {
+    function display_room_player_list(player_names, host_name, is_started) {
       document.getElementById('room_player_count_div_id').innerHTML = Object.keys(player_names).length
       document.getElementById('room_player_list_div_id').innerHTML = Object.keys(player_names)
       document.getElementById('room_host_div_id').innerHTML = host_name
+      if (g_top['player_name'] === host_name) {
+        if (Object.keys(player_names).length > 1) {
+          document.getElementById('room_start_game_button_id').disabled = false
+        } else {
+          document.getElementById('room_start_game_button_id').disabled = true
+        }
+        if (is_started === 'yes') {
+          document.getElementById('room_start_game_button_id').disabled = true
+        }
+        document.getElementById('room_start_game_button_id').style.display = "block"
+        document.getElementById('room_waiting_div_id').style.display = "none"
+      } else {
+        document.getElementById('room_start_game_button_id').style.display = "none"
+        document.getElementById('room_waiting_div_id').style.display = "block"
+      }
     }
 
     function display_room() {
@@ -141,7 +325,7 @@
     }
 
     function create_room(player_name) {
-      
+
       let api_data = { 'player_name': player_name }
       send_api_data('create_room', api_data, function (res) {
         if (res['status'] === 'fail') {
@@ -152,13 +336,13 @@
         }
         g_top['room_id'] = res['data']['room_id']
         document.getElementById('room_number_div_id').innerHTML = res['data']['room_id']
-        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'], res['data']['is_started'])
         display_room()
       })
     }
 
     function join_room(player_name, room_id) {
-      
+
       let api_data = { 'room_id': room_id, 'player_name': player_name }
       send_api_data('join_room', api_data, function (res) {
         if (res['status'] === 'fail') {
@@ -169,7 +353,7 @@
         }
         g_top['room_id'] = res['data']['room_id']
         document.getElementById('room_number_div_id').innerHTML = res['data']['room_id']
-        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'], res['data']['is_started'])
         display_room()
       })
     }
@@ -189,13 +373,13 @@
     }
 
     function update_room(player_name, room_id) {
-      let api_data={'player_name':player_name, 'room_id':room_id}
-      send_api_data('update_room_player_list', api_data, function(res){
-        if (res['status']==='fail'){
+      let api_data = { 'player_name': player_name, 'room_id': room_id }
+      send_api_data('update_room_player_list', api_data, function (res) {
+        if (res['status'] === 'fail') {
           g_show_message(res['msg'])
           return
         }
-        display_room_player_list(res['data']['player_names'], res['data']['host_name'])
+        display_room_player_list(res['data']['player_names'], res['data']['host_name'], res['data']['is_started'])
       })
     }
 
@@ -224,26 +408,23 @@
     function display_lobby_room_list(res) {
       let rooms_div = document.getElementById("rooms_div_id")
       let data = res['rooms']
-      let player_name=g_top['player_name']
+      let player_name = g_top['player_name']
       //initialize
       rooms_div.innerHTML = ''
       //update
       for (let room_id in data) {
         if (data[room_id]['is_started'] === 'no') {
-          rooms_div.innerHTML += `Room ${room_id}: `;
-          const button = document.createElement('button')
-          button.id = 'room_' + room_id + '_button_id'
-          button.textContent = 'Join Room'
-          rooms_div.appendChild(button)
-          rooms_div.appendChild(br)
+          rooms_div.innerHTML += `<div>Room ${room_id}: </div>`;
+          rooms_div.innerHTML += `<div><button id="room_${room_id}_button_id">Join Room</button></div>`;
         } else {
-          rooms_div.innerHTML += `Room ${room_id}: Started`;
+          rooms_div.innerHTML += `<div>Room ${room_id}: </div>`;
+          rooms_div.innerHTML += `<div>Game in Progress</div>`;
         }
       }
       for (let room_id in data) {
         if (data[room_id]['is_started'] === 'no') {
           const button = document.getElementById('room_' + room_id + '_button_id')
-          button.onclick = function(){
+          button.onclick = function () {
             join_room(player_name, room_id)
           }
         }
@@ -299,7 +480,7 @@
 
 
     function update() {
-      console.log('update time: ' +Date.now())
+      console.log('update time: ' + Date.now())
       let player_name = g_top['player_name']
       let room_id = g_top['room_id']
       if (g_top['player_location'] === 'lobby') {
@@ -331,7 +512,12 @@
       leave_room_button.onclick = function () {
         leave_room(g_top['player_name']);
       }
-      
+
+      let room_start_game_button = document.getElementById('room_start_game_button_id');
+      room_start_game_button.onclick = function () {
+        start_game(g_top['player_name']);
+      }
+
       setInterval(update, g_top['update_rate']);
     }
 

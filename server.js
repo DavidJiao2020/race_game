@@ -148,6 +148,9 @@ function g_join_room(player_name, room_id) {
   if (!g_is_valid_room_id(room_id)) {
     return { 'status': 'fail', 'msg': 'room_id_is_invalid' }
   }
+  if(g_get_player_room_id(player_name)!==null){
+    return { 'status': 'fail', 'msg': 'user_has_room ' + g_get_player_room_id(player_name) }
+  }
   if (!g_is_room_exists(room_id)) {
     return { 'status': 'fail', 'msg': 'room_does_not_exist' }
   }
@@ -224,6 +227,29 @@ function debug(tag) {
   console.log(tag + ': ' + JSON.stringify(g_top, null, 2))
 }
 
+////////////////  GAME  /////////////////
+
+function start_game(api_data) {
+  let player_name = api_data['player_name']
+  if (!g_is_valid_player_name(player_name)) {
+    console.log('warning: player_name is invalid. ignored.')
+    return { 'status': 'fail', 'msg': 'user_is_invalid' }
+  }
+  if (!g_is_player_registered(player_name)) {
+    return { 'status': 'fail', 'msg': 'user_does_not_exist' }
+  }
+  let room_id = g_get_player_room_id(player_name)
+  if (room_id===null){
+    return { 'status': 'fail', 'msg': 'Room has been deleted by host. Please leave the room.' }
+  }
+  if (!(g_top['rooms'][room_id]['host_name']===player_name)){
+    return { 'status': 'fail', 'msg': 'Only host can start the game.' }
+  }
+  g_top['rooms'][room_id]['is_started']='yes'
+  return { 'status': 'success', 'msg': 'Game started.', 'data':{} }
+}
+
+
 ////////////////  ROOM  /////////////////
 
 function create_room(api_data) {
@@ -233,7 +259,8 @@ function create_room(api_data) {
   if (ret['status']==='fail'){
     return ret
   }
-  let data = { 'player_names': {}, 'room_id': g_get_player_room_id(player_name) , 'host_name': player_name}
+  let room_id = g_get_player_room_id(player_name)
+  let data = { 'player_names': {}, 'room_id': room_id , 'host_name': player_name, 'is_started': g_top['rooms'][room_id]['is_started']}
   data['player_names'][player_name] = {}
   console.log('data: ' + data)
   ret['data']=data
@@ -249,7 +276,7 @@ function join_room(api_data) {
   if (ret['status']==='fail'){
     return ret
   }
-  let data = { 'player_names': g_top['rooms'][room_id]['player_names'], 'room_id': g_get_player_room_id(player_name), 'host_name': g_top['rooms'][room_id]['host_name'] }
+  let data = { 'player_names': g_top['rooms'][room_id]['player_names'], 'room_id': g_get_player_room_id(player_name), 'host_name': g_top['rooms'][room_id]['host_name'], 'is_started': g_top['rooms'][room_id]['is_started']}
   console.log('data: ' + JSON.stringify(data))
   ret['data']=data
   return ret
@@ -350,6 +377,8 @@ function recieve_api_data(req, res) {
     ret = join_room(api_data)
   } else if (api_name === 'leave_room') {
     ret = leave_room(api_data)
+  } else if (api_name==='start_game'){
+    ret = start_game(api_data)
   }
   console.log(`RESPONSETEXT (server end): -->${JSON.stringify(ret)}<--`)
 
