@@ -133,6 +133,50 @@
       /*border: 1px solid black;*/
     }
 
+    /*////////////////  ROOM  /////////////////////*/
+
+    .room_container {
+      display: grid;
+      grid-template-columns: 16rem auto;
+      /*border: 1px solid black;*/
+
+    }
+
+    .room_info_container {
+      padding-top:1rem;
+      padding-left:1rem;
+      padding-right:1rem;
+      row-gap: 0.5rem;
+      display: grid;
+      grid-template-columns: auto auto;
+      /*border: 1px solid black;*/
+    }
+
+    .room_game_name {
+      grid-column: 1/3;
+      grid-row:1/3;
+      font-size: 1.6rem;
+      font-family: var(--font_family);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .room_player_list_div {
+      grid-column: 1/3;
+      grid-row: 3/4;
+      padding-bottom:1rem;
+      padding-left:1rem;
+      padding-right:1rem;
+      /*border: 1px solid black;*/
+    }
+
+    /*////////////////  GAME  /////////////////////*/
+
+    .game_container {
+      background-color: gray;
+      /*border: 1px solid black;*/
+    }
+
   </style>
 </head>
 
@@ -191,45 +235,63 @@
   </div>
 
   <div id="room_page_div_id" hidden>
-    <div>
-      Room #:
-    </div>
-    <div id="room_number_div_id">
+    <div class="room_container">
+      <div>
+        <div class="room_info_container">
+          <div class="room_game_name">
+            RACE GAME
+          </div>
+          <div>
+            <div id="room_waiting_div_id">
+              Waiting for host to start game...
+            </div>
+            <button id="room_start_game_button_id">
+              Start Game
+            </button>
+          </div>
+          <div>
+            <button id="leave_room_button_id">
+              Leave Room
+            </button>
+          </div>
+          <div>
+            Room #: 
+          </div>
+          <div id="room_number_div_id">
+          </div>
+          <div>
+            Room Capacity: 
+          </div>
+          <div id="room_capacity_div_id">
+            8
+          </div>
+          <div>
+            Host: 
+          </div>
+          <div id="room_host_div_id">
+          </div>
+          <div>
+            # of Players:
+          </div>
+          <div id="room_player_count_div_id">
+            0
+          </div>
+          <div>
+            Player List:
+          </div>
+
+        </div>
+        <div class="room_player_list_div" id="room_player_list_div_id">
+        </div>
+      </div>
+      <div>
+        <div class="game_container">
+          Game Here
+        </div>
+      </div>
+
 
     </div>
-    <div>
-      Room Capacity:
-    </div>
-    <div id="room_capacity_div_id">
-      8
-    </div>
-    <div>
-      # of Players:
-    </div>
-    <div id="room_player_count_div_id">
-      0
-    </div>
-    <div>
-      Player List:
-    </div>
-    <div id="room_player_list_div_id">
-
-    </div>
-    <div>
-      Host:
-    </div>
-    <div id="room_host_div_id">
-
-    </div>
-    <button id="room_start_game_button_id">
-      Start Game
-    </button>
-    <div id="room_waiting_div_id">
-      Waiting for host to start game...
-    </div>
-    <button id="leave_room_button_id">
-      Leave Room
-    </button>
   </div>
 
 
@@ -297,7 +359,10 @@
 
     function display_room_player_list(player_names, host_name, is_started) {
       document.getElementById('room_player_count_div_id').innerHTML = Object.keys(player_names).length
-      document.getElementById('room_player_list_div_id').innerHTML = Object.keys(player_names)
+      document.getElementById('room_player_list_div_id').innerHTML=''
+      for(player_name in player_names) {
+        document.getElementById('room_player_list_div_id').innerHTML += "<div>" + player_name + "</div>"
+      }
       document.getElementById('room_host_div_id').innerHTML = host_name
       if (g_top['player_name'] === host_name) {
         if (Object.keys(player_names).length > 1) {
