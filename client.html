@@ -99,7 +99,7 @@
       grid-column: 1/3;
       grid-row: 1/2;
       font-size: 1rem;
-      padding:0.5rem;
+      padding: 0.5rem;
       background-color: rgb(241, 239, 239);
       /*border: 1px solid black;*/
     }
@@ -111,7 +111,7 @@
     }
 
     .lobby_room_div {
-      padding:0.5rem;
+      padding: 0.5rem;
       grid-column: 1/2;
       grid-row: 2/3;
       background-color: azure;
@@ -119,7 +119,7 @@
     }
 
     .lobby_player_div {
-      padding:0.5rem;
+      padding: 0.5rem;
       grid-column: 2/3;
       grid-row: 2/3;
       background-color: beige;
@@ -129,7 +129,7 @@
     .lobby_room_list_div {
       display: grid;
       grid-template-columns: auto auto;
-      padding:0.5rem;
+      padding: 0.5rem;
       /*border: 1px solid black;*/
     }
 
@@ -143,9 +143,9 @@
     }
 
     .room_info_container {
-      padding-top:1rem;
-      padding-left:1rem;
-      padding-right:1rem;
+      padding-top: 1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       row-gap: 0.5rem;
       display: grid;
       grid-template-columns: auto auto;
@@ -154,7 +154,7 @@
 
     .room_game_name {
       grid-column: 1/3;
-      grid-row:1/3;
+      grid-row: 1/3;
       font-size: 1.6rem;
       font-family: var(--font_family);
       font-weight: bold;
@@ -164,9 +164,9 @@
     .room_player_list_div {
       grid-column: 1/3;
       grid-row: 3/4;
-      padding-bottom:1rem;
-      padding-left:1rem;
-      padding-right:1rem;
+      padding-bottom: 1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       /*border: 1px solid black;*/
     }
 
@@ -176,6 +176,17 @@
       background-color: gray;
       /*border: 1px solid black;*/
     }
+
+    .game_card_image {
+      width: 100%;
+      height: 100%;
+    }
+
+    .game_card_image_div {
+      height:auto;
+      width:5rem;
+    }
+
 
   </style>
 </head>
@@ -228,7 +239,7 @@
           Online Players:
         </div>
         <div id="players_div_id">
-  
+
         </div>
       </div>
     </div>
@@ -255,18 +266,23 @@
             </button>
           </div>
           <div>
-            Room #: 
+            Room #:
           </div>
           <div id="room_number_div_id">
           </div>
           <div>
-            Room Capacity: 
+            Room Capacity:
           </div>
           <div id="room_capacity_div_id">
             8
           </div>
           <div>
-            Host: 
+            You are:
+          </div>
+          <div id="room_player_name_div_id">
+          </div>
+          <div>
+            Host:
           </div>
           <div id="room_host_div_id">
           </div>
@@ -286,7 +302,10 @@
       </div>
       <div>
         <div class="game_container">
-          Game Here
+          <div class="game_card_image_div">
+            <img class="game_card_image" src="/img/0.jpeg" alt="image load failure">
+            <img>
+          </div>
         </div>
       </div>
 
@@ -359,8 +378,9 @@
 
     function display_room_player_list(player_names, host_name, is_started) {
       document.getElementById('room_player_count_div_id').innerHTML = Object.keys(player_names).length
-      document.getElementById('room_player_list_div_id').innerHTML=''
-      for(player_name in player_names) {
+      document.getElementById('room_player_name_div_id').innerHTML = g_top['player_name']
+      document.getElementById('room_player_list_div_id').innerHTML = ''
+      for (player_name in player_names) {
         document.getElementById('room_player_list_div_id').innerHTML += "<div>" + player_name + "</div>"
       }
       document.getElementById('room_host_div_id').innerHTML = host_name

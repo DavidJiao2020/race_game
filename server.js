@@ -7,25 +7,25 @@ const { stringify } = require('querystring');
 /*
 g_top=
 {
-'players':
-{
-  'player_name':
-  {
-    'room_id': room_id,
-    'last_updated_time': time
-  }
-},
-'rooms':
-{
-  'room_id':
-  {
-    'player_names':
-    {
-      'player_name': {}
-    },
-    'host_name': player_name,
-    'is_started': 'yes'/'no'
-  }
+  "players": {
+    "player_name": {
+      "room_id": "room_id",
+      "last_updated_time": "time" 
+    }
+  },
+  "rooms": {
+    "room_id": {
+      "player_names": {
+        "player_name": {}
+      },
+      "host_name": "player_name",
+      "is_started": "yes/no"
+    }
+  },
+  "update_rate": 3000,
+  'online_update_interval': 60000,
+  'last_updated_room': 0,
+  'player_name_max_length': 64,
 }
 */
 var g_top = {
@@ -36,6 +36,10 @@ var g_top = {
   'last_updated_room': 0,
   'player_name_max_length': 64,
 };
+
+
+
+
 function g_is_valid_player_name(player_name) {
   if (player_name === undefined) {
     console.log('warning: player name is undefined.')
@@ -148,7 +152,7 @@ function g_join_room(player_name, room_id) {
   if (!g_is_valid_room_id(room_id)) {
     return { 'status': 'fail', 'msg': 'room_id_is_invalid' }
   }
-  if(g_get_player_room_id(player_name)!==null){
+  if (g_get_player_room_id(player_name) !== null) {
     return { 'status': 'fail', 'msg': 'user_has_room ' + g_get_player_room_id(player_name) }
   }
   if (!g_is_room_exists(room_id)) {
@@ -228,6 +232,41 @@ function debug(tag) {
 }
 
 ////////////////  GAME  /////////////////
+function shuffle_array(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
+}
+
+
+function draw_card(room_id, player_name) {
+  let draw_pile = g_top['rooms'][room_id]['draw_pile']
+  let discard_pile = g_top['rooms'][room_id]['discard_pile']
+  let hand = g_top['rooms'][room_id]['player_names'][player_name]['hand']
+  if (draw_pile.length === 0) {
+    g_top['rooms'][room_id]['draw_pile'] = shuffle_array(discard_pile)
+    g_top['rooms'][room_id]['discard_pile'] = []
+  }
+  hand.push(draw_pile.pop())
+  return { 'status': 'success', 'msg': 'card_drawn' }
+}
+
+function set_up_game(room_id) {
+  let draw_pile=shuffle_array(['0', '1', '1', '1', '1', '1', '2', '2', '2', '3', '3', '3', '4', '4', '5', '5', '6', '7', '8', '9', '10'])
+  let discard_pile=[]
+  g_top['rooms'][room_id]['draw_pile']=draw_pile
+  g_top['rooms'][room_id]['discard_pile']=discard_pile
+  for(player_name in g_top['rooms'][room_id]['player_names']){
+    let hand=[]
+    g_top['rooms'][room_id]['player_names'][player_name]['hand']=hand
+    draw_card(room_id, player_name)
+  }
+}
+
 
 function start_game(api_data) {
   let player_name = api_data['player_name']
@@ -239,14 +278,19 @@ function start_game(api_data) {
     return { 'status': 'fail', 'msg': 'user_does_not_exist' }
   }
   let room_id = g_get_player_room_id(player_name)
-  if (room_id===null){
+  if (room_id === null) {
     return { 'status': 'fail', 'msg': 'Room has been deleted by host. Please leave the room.' }
   }
-  if (!(g_top['rooms'][room_id]['host_name']===player_name)){
+  if (!(g_top['rooms'][room_id]['host_name'] === player_name)) {
     return { 'status': 'fail', 'msg': 'Only host can start the game.' }
   }
-  g_top['rooms'][room_id]['is_started']='yes'
-  return { 'status': 'success', 'msg': 'Game started.', 'data':{} }
+  g_top['rooms'][room_id]['is_started'] = 'yes'
+
+  set_up_game(room_id)
+  
+
+
+  return { 'status': 'success', 'msg': 'Game started.', 'data': {} }
 }
 
 
@@ -256,14 +300,14 @@ function create_room(api_data) {
   let player_name = api_data['player_name']
   console.log('api_data: ' + JSON.stringify(api_data))
   let ret = g_create_room(player_name)
-  if (ret['status']==='fail'){
+  if (ret['status'] === 'fail') {
     return ret
   }
   let room_id = g_get_player_room_id(player_name)
-  let data = { 'player_names': {}, 'room_id': room_id , 'host_name': player_name, 'is_started': g_top['rooms'][room_id]['is_started']}
+  let data = { 'player_names': {}, 'room_id': room_id, 'host_name': player_name, 'is_started': g_top['rooms'][room_id]['is_started'] }
   data['player_names'][player_name] = {}
   console.log('data: ' + data)
-  ret['data']=data
+  ret['data'] = data
   return ret
 }
 
@@ -273,12 +317,12 @@ function join_room(api_data) {
   console.log('api_data: ' + JSON.stringify(api_data))
   console.log('room_id: ' + room_id)
   let ret = g_join_room(player_name, room_id)
-  if (ret['status']==='fail'){
+  if (ret['status'] === 'fail') {
     return ret
   }
-  let data = { 'player_names': g_top['rooms'][room_id]['player_names'], 'room_id': g_get_player_room_id(player_name), 'host_name': g_top['rooms'][room_id]['host_name'], 'is_started': g_top['rooms'][room_id]['is_started']}
+  let data = { 'player_names': g_top['rooms'][room_id]['player_names'], 'room_id': g_get_player_room_id(player_name), 'host_name': g_top['rooms'][room_id]['host_name'], 'is_started': g_top['rooms'][room_id]['is_started'] }
   console.log('data: ' + JSON.stringify(data))
-  ret['data']=data
+  ret['data'] = data
   return ret
 }
 
@@ -301,7 +345,7 @@ function update_room_player_list(api_data) {
     return { 'status': 'fail', 'data': `player name ${player_name} is not registered when updating room.` }
   }
   let room_id = g_get_player_room_id(player_name)
-  if(room_id===null){
+  if (room_id === null) {
     return { 'status': 'fail', 'msg': 'Room has been deleted by host. Please leave the room.' }
   }
   if (!g_is_valid_room_id(room_id)) {
@@ -377,7 +421,7 @@ function recieve_api_data(req, res) {
     ret = join_room(api_data)
   } else if (api_name === 'leave_room') {
     ret = leave_room(api_data)
-  } else if (api_name==='start_game'){
+  } else if (api_name === 'start_game') {
     ret = start_game(api_data)
   }
   console.log(`RESPONSETEXT (server end): -->${JSON.stringify(ret)}<--`)
@@ -398,9 +442,12 @@ function main() {
   const body_parser = require('body-parser')
   const fs = require('fs')
   const cors = require('cors')
+  const path = require('path')
+
   client.use(cors({ origin: '*' }))
   client.use(body_parser.json())
   client.use(body_parser.urlencoded())
+  client.use("/img", express.static(path.join(__dirname, 'public')))
   client.post('/api', recieve_api_data)
   client.get('/', home_func)
   setInterval(update, g_top['update_rate']);
