@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <style>
+        body {
+            border: 1rem solid rgb(179, 63, 63);
+            margin: 0;
+            padding: 0;
+            height: 80%;
+            width: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Times, sans-serif;
+        }
+
+        html {
+            border: 1rem solid black;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Times, sans-serif;
+        }
+
+        #container {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            /* Equal height for all rows */
+            grid-template-columns: 3fr;
+            gap: 0;
+            /* No gap between rows */
+            width: 100%;
+            height: 100%;
+        }
+
+        .common_container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            height: 90%;
+            width: 90%;
+
+        }
+
+        .player_container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: 1fr 1rem;
+            /* Two rows, one for cards and one for the player name */
+            gap: 0.5rem;
+            height: 90%;
+            width: 90%;
+        }
+
+        .card {
+            border: 0.1rem solid black;
+
+        }
+
+        .player_box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #4caf50;
+            color: white;
+            font-size: 2.5rem;
+            border-radius: 1rem;
+            width: 100%;
+            /* Stretch horizontally */
+            margin: 0 auto;
+            /* Center horizontally */
+            position: relative;
+        }
+
+        #common_box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2196f3;
+            color: white;
+            font-size: 1.5rem;
+            border-radius: 1rem;
+            width: 100%;
+
+            /* Stretch horizontally */
+            margin: 0 auto;
+            /* Center horizontally */
+        }
+
+        #self_player span {
+            position: absolute;
+            border: 0.1rem solid black;
+            align-self: flex-end;
+            /* Move text closer to the bottom edge */
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        #op_player span {
+            position: absolute;
+            border: 0.1rem solid black;
+
+            /* Move text closer to the top edge */
+            font-size: 1.5rem;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .cover {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            position: absolute;
+            top: 0;
+            left: 0;
+            gap: 0;
+            /* No gap between rows */
+            width: 100%;
+            height: 100%;
+
+
+        }
+
+        .cover_center {
+            vertical-align: middle;
+            text-align: center;
+            font-size: 15rem;
+
+
+        }
+    </style>
+
+
+
+</head>
+
+<body>
+    <div id="container">
+        <div id="op_player" class="player_box">
+            <span>Opponent</span>
+            <div class="player_container">
+                <div id='op_card1' class="card">
+                    ?
+                </div>
+                <div id='op_card2' class="card">
+                    ?
+                </div>
+                <div id='op_card3' class="card">
+                    ?
+                </div>
+                <div id='op_card4' class="card">
+                    ?
+                </div>
+                <div id='op_card5' class="card">
+                    ?
+                </div>
+                <div id='op_buffer' class="card">
+                    buffer
+                </div>
+            </div>
+        </div>
+        <div id="common_box">
+            <div class="common_container">
+                <div id='common_buffer1' class="card">
+                    back
+                </div>
+                <div id='common_card1' class="card">
+                    front
+                </div>
+                <div id='common_card2' class="card">
+                    front
+                </div>
+                <div id='common_buffer2' class="card">
+                    back
+                </div>
+            </div>
+        </div>
+        <div id="self_player" class="player_box">
+            <span>Me</span>
+            <div class="player_container">
+                <div id='self_card1' class="card">
+                    empty
+                </div>
+                <div id='self_card2' class="card">
+                    empty
+                </div>
+                <div id='self_card3' class="card">
+                    empty
+                </div>
+                <div id='self_card4' class="card">
+                    empty
+                </div>
+                <div id='self_card5' class="card">
+                    empty
+                </div>
+                <div id='self_buffer' class="card">
+                    buffer
+                </div>
+            </div>
+        </div>
+
+        <div id='cover_id' class="cover">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <span id='cover_center_id' class='cover_center' visible="false">
+
+            </span>
+            <div></div>
+
+        </div>
+
+
+        <script>
+
+
+            let g_player_name = String(Math.random());
+            let g_highlighted_card = null;
+            let self_buffer_count = -1;
+            let op_buffer_count = -1;
+
+            function update(data){
+                console.log(data);
+                for (let player_name in data.players) {
+                    if (player_name == g_player_name) {
+                        document.getElementById('self_buffer').innerHTML = data.players[player_name].cards.buffer.length + ' left';
+                    } else {
+                        document.getElementById('op_buffer').innerHTML = data.players[player_name].cards.buffer.length + ' left';
+                    }
+
+                }
+                //console.log(data);
+                document.getElementById('common_card1').innerHTML = data.common.playing1;
+                document.getElementById('common_card2').innerHTML = data.common.playing2;
+                document.getElementById('common_buffer1').innerHTML = String(data.common.buffer1.length) + ' left';
+                document.getElementById('common_buffer2').innerHTML = String(data.common.buffer2.length) + ' left';
+                for(let i = 1; i <= 5; i++){
+                    document.getElementById('self_card' + i).innerHTML = data.players[g_player_name].cards.hand[i-1];
+                }
+                return;
+            }
+
+            function starting_setup(data){
+                document.getElementById('self_buffer').innerHTML = String(self_buffer_count) + ' left';
+                document.getElementById('op_buffer').innerHTML = String(op_buffer_count) + ' left';
+                //console.log(data);
+                document.getElementById('common_card1').innerHTML = data.common.playing1;
+                document.getElementById('common_card2').innerHTML = data.common.playing2;
+                document.getElementById('common_buffer1').innerHTML = String(data.common.buffer1.length) + ' left';
+                document.getElementById('common_buffer2').innerHTML = String(data.common.buffer2.length) + ' left';
+            }
+
+            function countdown(n, data) {
+                document.getElementById('cover_id').style.visibility = 'visible';
+
+                if (n == 0) {
+                    //console.log(data);
+                    document.getElementById('cover_id').style.visibility = 'hidden';
+                    starting_setup(data);
+                    return;
+                }
+                document.getElementById('cover_center_id').innerHTML = n;
+                setTimeout(() => {
+                    countdown(n - 1, data);
+                }, 1000);
+            }
+
+            function highlight(last, now){
+                if (last != null) {
+                    document.getElementById(last).style.border = '0.1rem solid black';
+                }
+                document.getElementById(now).style.border = '0.3rem solid red';
+                return now;
+            }
+
+            function start_game(data) {
+                let players_data = data.players;
+
+                for (player_name in players_data) {
+                    if (player_name == g_player_name) {
+                        self_buffer_count = players_data[player_name].cards.buffer.length;
+                    } else {
+                        op_buffer_count = players_data[player_name].cards.buffer.length;
+                    }
+                }
+                console.log(data);
+
+                console.log("Game started");
+                countdown(3, data);
+            }
+
+            function play_card(data) {
+                update(data);
+
+                return;
+
+            }
+
+
+            function refill_hand(data){
+                update(data);
+                return;
+            }
+
+            function refill_playing(data){
+                countdown(3, data);
+                return;
+            }
+
+            function end_game(data){
+                if (data.winner == g_player_name) {
+                    document.getElementById('cover_center_id').innerHTML = 'You win!';
+                } else {
+                    document.getElementById('cover_center_id').innerHTML = 'You lose!';
+                }
+                document.getElementById('cover_id').style.visibility = 'visible';
+                return;
+            }
+
+            function respond(data) {
+                if (data.action == 'start_game') {
+                    start_game(data.g_top);
+                } else if (data.action == 'play_card') {
+                    play_card(data.g_top);
+                } else if (data.action == 'refill_hand'){
+                    refill_hand(data.g_top);
+                } else if (data.action == 'refill_playing'){
+                    refill_playing(data.g_top);
+                } else if (data.action == 'end_game') {
+                    end_game(data.g_top);
+                }
+                return;
+            }
+
+            function main() {
+
+                const socket = new WebSocket('ws://192.168.1.168:3000/ws');
+                socket.addEventListener('open', function (event) {
+                    console.log('WebSocket connection established');
+                    socket.send(JSON.stringify({ player_name: g_player_name, action: "join" }));
+                });
+                socket.addEventListener('message', function (event) {
+                    console.log('Message from server: ', event.data);
+                    const data = JSON.parse(event.data);
+                    respond(data);
+
+                });
+                socket.addEventListener('close', function (event) {
+                    console.log('WebSocket connection closed');
+                });
+                socket.addEventListener('error', function (error) {
+                    console.error('WebSocket error: ', error);
+                });
+
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById('self_card' + i).addEventListener('click', function () {
+                        g_highlighted_card = highlight(g_highlighted_card, 'self_card' + i);
+                        //socket.send(JSON.stringify({ g_player_name: g_player_name, action: "play", card: "self_card" + i }));
+                    });
+                }
+                for (let i = 1; i <= 2; i++) {
+                    document.getElementById('common_card' + i).addEventListener('click', function () {
+                        if (g_highlighted_card == null) {
+                            return;
+                        }
+                        
+                        socket.send(JSON.stringify({
+                            player_name: g_player_name, action: "play_card",
+                            from: [g_highlighted_card, document.getElementById(g_highlighted_card).innerHTML],
+                            to: ["common_card" + i, document.getElementById('common_card' + i).innerHTML]
+                        }));
+                        if (g_highlighted_card != null) {
+                            document.getElementById(g_highlighted_card).style.border = '0.1rem solid black';
+                        } 
+                        g_highlighted_card = null;
+                        
+
+
+                    });
+                }
+                
+                document.getElementById('self_buffer').addEventListener('click', function () {
+
+                    socket.send(JSON.stringify({
+                        player_name: g_player_name, action: "refill_hand"
+                    }));
+
+                    
+                })
+            }
+
+            main();
+        </script>
+
+
+
+
+</body>
+
+
+
+
+</html>
